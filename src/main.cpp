@@ -32,10 +32,52 @@ int main()
 {
   uWS::Hub h;
 
-  PID pid;
+  // steering pid control
+  PID pids;
   // TODO: Initialize the pid variable.
+  
+// First Trial
+//   pids.Init(0.2,0.004,3.0);
+  
+/*
+ More Trials
+//   pids.Init(0.22,0.002,3.6);
+//   pids.Init(0.24,0.002,3.6);
+//   pids.Init(0.26,0.002,3.6);
+//   pids.Init(0.28,0.002,3.6);
+//    pids.Init(0.3,0.002,3.6);
+//   pids.Init(0.18,0.004,3.0);
+//   pids.Init(0.14,0.004,3.0);
+//   pids.Init(0.12,0.004,3.0);
+//   pids.Init(0.1,0.004,3.0);
 
-  h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+*/
+
+ // Final PID Parameters
+  //pids.Init(0.2,0.002,3.6);
+  
+  // P Controller
+  pids.Init(1.0,0.0,0.0);
+  
+  // I Controller
+  //pids.Init(0.0,1.0,0.0);
+  
+  // D Controller
+  // pids.Init(0.0,0.0,1.0);
+  
+  /*
+  // twiddle ( 500 steps)
+  pids.step_index = 0;
+  pids.runTwiddle = true;
+  pids.NoOfStepsTwiddle = 500;
+  pids.err = 0.0;
+  pids.is_first_attempt = true;
+  pids.is_second_attempt = true;
+  
+  */
+  
+
+  h.onMessage([&pids](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -51,6 +93,7 @@ int main()
           double speed = std::stod(j[1]["speed"].get<std::string>());
           double angle = std::stod(j[1]["steering_angle"].get<std::string>());
           double steer_value;
+          double throttle_value;
           /*
           * TODO: Calcuate steering value here, remember the steering value is
           * [-1, 1].
@@ -58,12 +101,120 @@ int main()
           * another PID controller to control the speed!
           */
           
+           if (pids.step_index ==0)
+             {
+               pids.p_error = cte;
+             }
+            pids.UpdateError(cte);
+            steer_value = pids.TotalError();
+          	pids.step_index +=1;
+    /*      
+		I tried twiddle, but it took long time for the algorithm to converge even though my initial PID parameters worked well.
+        Eventually, I gave up twiddle and tried to tune the parameter manually.
+        
+          pids.err +=pow(cte,2);
+          if ( pids.runTwiddle) 
+          {
+            if(pids.step_index >pids.NoOfStepsTwiddle)
+            {
+              
+              
+              if(pids.is_first_attempt)
+              {
+                // First attempt
+                pids.best_err = pids.err;
+                pids.is_first_attempt = false;
+                
+                pids.p[pids.p_index] +=pids.dp[pids.p_index];
+                
+                
+              } 
+              else
+              {
+                pids.dp_sum = pids.dp[0] + pids.dp[1] + pids.dp[2];
+                
+                if(pids.dp_sum>0.8)
+                {
+                   if((pids.err<pids.best_err) && pids.is_second_attempt)
+                  {
+                    pids.best_err = pids.err;
+                    pids.dp[pids.p_index] *= 1.1;
+                    pids.p_index = (pids.p_index+1)%3;
+                    pids.is_first_attempt = true; 
+                     
+                  }
+                  else
+                  {
+                    if(pids.is_second_attempt)
+                    {
+                      pids.p[pids.p_index] -= 2*pids.dp[pids.p_index];
+                      pids.is_second_attempt = false;
+                    }
+                    else
+                    {
+                      if(pids.err<pids.best_err)
+                      {
+                        pids.best_err = pids.err;
+                        pids.dp[pids.p_index] *= 1.1;
+                        pids.p_index = (pids.p_index+1)%3;
+                        pids.is_first_attempt = true; 
+                        pids.is_second_attempt = true;
+                      }
+                      else
+                      {
+                        pids.p[pids.p_index] += pids.dp[pids.p_index];
+                        pids.dp[pids.p_index] *= 0.9;
+                        pids.p_index = (pids.p_index+1)%3;
+                        pids.is_first_attempt = true; 
+                        pids.is_second_attempt = true;
+                      }
+                        
+                    }
+                     
+                    
+                  }
+
+
+                }
+                else
+                {
+                  std::cout << "pids: " << pids.p[0] << " " << pids.p[1] << " " <<pids.p[2] <<std::endl;
+                  pids.runTwiddle = false;
+                }
+              }
+              
+              // Reset the simulator to the initial stage 
+              	std::string reset_msg = "42[\"reset\",{}]";
+  			  	ws.send(reset_msg.data(), reset_msg.length(), uWS::OpCode::TEXT);
+                pids.step_index = 0;
+                pids.err = 0.0;
+              
+              return;
+              
+              }
+              
+            }
+          else
+          {
+             std::cout << "pid: " << pids.p[0] << " " << pids.p[1] << " " <<pids.p[2] <<std::endl;
+             
+             std::cout << "dp: " << pids.dp[0] << " " << pids.dp[1] << " " <<pids.dp[2] <<std::endl;
+            
+          }
+          
+   */
+          
+          
+          
+          throttle_value = (1-fabs(steer_value))*0.25 +0.1;
+          
+          
           // DEBUG
-          std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
+         std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = 0.3;
+          msgJson["throttle"] = throttle_value;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
