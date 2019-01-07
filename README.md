@@ -42,3 +42,10 @@ Here is a video of car driving around the track (not whole track) for the parame
 ![](PID_Video.gif)
 
 
+## Authors
+
+* Chenxin Wang
+
+Thanks for the contributions from Udacity
+
+
