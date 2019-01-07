@@ -54,13 +54,13 @@ int main()
 */
 
  // Final PID Parameters
-  //pids.Init(0.2,0.002,3.6);
+  pids.Init(0.2,0.002,3.5);
   
   // P Controller
-  pids.Init(1.0,0.0,0.0);
+//   pids.Init(1.0,0.0,0.0);
   
   // I Controller
-  //pids.Init(0.0,1.0,0.0);
+//   pids.Init(0.0,1.0,0.0);
   
   // D Controller
   // pids.Init(0.0,0.0,1.0);
